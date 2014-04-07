@@ -1,12 +1,8 @@
 
-
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 
 public class DESBasics {
@@ -21,8 +17,6 @@ public class DESBasics {
         int bin_plain[]=new int[65];
         int bin[]=new int[65];
         int per[]=new int [65];
-        int per_out[]=new int[65];
-        int per_dec[]=new int[65];
         int per_sort[]=new int [65];
         int per_index[]=new int[65];
         int drop_table[]=new int[57];
@@ -32,11 +26,113 @@ public class DESBasics {
         int shift_count[]=new int [17];
         int round_key[][]=new int [17][49];
         
+        int s[][][]=new int [8][16][2];
+        int ex_box[]=new int[65];
+        int str_box[]=new int[33];        
+        
+        initialize_box(s,ex_box,str_box);
+        
+        num[1]=10;num[2]=10;num[3]=11;num[4]=11;num[5]=0;num[6]=9;num[7]=1;num[8]=8;
+        num[9]=2;num[10]=7;num[11]=3;num[12]=6;num[13]=12;num[14]=12;num[15]=13;num[16]=13;
+        
+       String msg="abcdefghijklmnop";
+       int msg_hex[]=new int[msg.length()+1]; 
+       
+       for(int i=0;i<msg.length();i++)
+       {
+    	   int temp=(int)msg.charAt(i)-97;
+    	   
+    	   {
+    		   msg_hex[i+1]=temp;
+    	   }   
+       }	   
+    	   
+       plain=Arrays.copyOf(msg_hex,17);
+       
+              
+        for(int i=1;i<=16;i++)
+        {
+        	if(i==1 || i==2|| i==9||i==16)
+        		shift_count[i]=1;
+        	else
+        		shift_count[i]=2;
+        	
+        }	
+        
+        System.out.println("The entered numbers are:");
+        for(int i=1;i<=16;i++)
+        {
+            System.out.print(num[i]+"\t");
+        }
+        System.out.println();
+        
+        hexbin(num,bin,16,64);
+       
+        key=Arrays.copyOf(bin, 65);
+        
+              
         
         
         
         
-        int s[][][]={
+        
+        System.out.println("\nThe content of initial key are:");
+        dis_array_num(bin,64);
+        
+        assign_drop_table(drop_table);
+        assign_key_comp(key_comp);
+        generate_key(key,drop_table,shift_count, key_comp, round_key);
+        	
+        
+        hexbin(plain,bin_plain,16,64);
+       
+        System.out.println("\nThe content of message are:");
+        dis_array_num(bin_plain,64);
+        
+        assign_per(per);
+        
+        for(int i=1;i<=64;i++)
+            per_index[i]=i;
+        
+        per_sort=Arrays.copyOf(per,65);
+        
+        for(int i=1;i<=64;i++)
+            per_sort[i]=per[i];
+        
+        init_final(per_sort,per_index);
+        int cip_msg[]=new int[65];
+        int decp_msg[]=new int[65];
+        char cip_msg_txt[]=new char[17];
+        char decp_msg_txt[]=new char[17];
+        
+        
+        encrypt(bin_plain,round_key,per,ex_box,s,str_box,per_index,cip_msg);
+        
+        //System.out.println("\nThe encrypted message is:");
+        //dis_array_num(cip_msg,64);
+        binhex(cip_msg,cip_msg_txt);
+        
+              
+        decrypt(cip_msg,round_key,per,ex_box,s,str_box,per_index,decp_msg);
+        
+        //System.out.println("\nThe original message is:");
+        //dis_array_num(decp_msg,64);
+        
+        binhex(decp_msg,decp_msg_txt);
+        System.out.println("\nThe original message is:");
+        System.out.println(msg);
+        
+        System.out.println("The encrypted message text:");
+        dis_array_char(cip_msg_txt,16);
+        
+        System.out.println("\nThe decrypted message text:");
+        dis_array_char(decp_msg_txt,16);
+    }
+    
+    
+    public static void initialize_box(int s[][][],int ex_box[],int str_box[])
+    {
+    	int s1[][][]={
     			{{14,4,13,1,2,15,11,8,3,10,6,12,5,9,0,7},
     				{0,15,7,4,14,2,13,1,10,6,12,11,9,5,3,8},
     	        
@@ -79,7 +175,10 @@ public class DESBasics {
                 {7,11,4,1,9,12,14,2,0,6,10,13,15,3,5,8},
                 {2,1,14,7,4,10,8,13,15,12,9,0,3,5,6,11}}};  //s8
         
-        int ex_box[]={0,32,1,2,3,4,5,
+    	s=Arrays.copyOf(s1, s1.length);
+    	
+    	
+        int ex_box1[]={0,32,1,2,3,4,5,
  	           4,5,6,7,8,9,
  	           8,9,10,11,12,13,
  	           12,13,14,15,16,17,
@@ -87,7 +186,10 @@ public class DESBasics {
  	           20,21,22,23,24,25,
  	           24,25,26,27,28,29,
  	           28,29,30,31,32,1};
-        int str_box[]={0,16,7,20,21,
+        
+        ex_box=Arrays.copyOf(ex_box1, ex_box1.length);
+        
+        int str_box1[]={0,16,7,20,21,
  	           29,12,28,17,
  	           1,15,23,26,
  	           5,18,31,10,
@@ -95,103 +197,8 @@ public class DESBasics {
  	           32,27,3,9,
  	           19,13,30,6,
  	           22,11,4,25};
-       
-        num[1]=10;num[2]=10;num[3]=11;num[4]=11;num[5]=0;num[6]=9;num[7]=1;num[8]=8;
-        num[9]=2;num[10]=7;num[11]=3;num[12]=6;num[13]=12;num[14]=12;num[15]=13;num[16]=13;
-        
-       String msg="abcdefghijklmnop";
-       int msg_hex[]=new int[msg.length()+1]; 
-       
-       for(int i=0;i<msg.length();i++)
-       {
-    	   int temp=(int)msg.charAt(i)-97;
-    	   
-    	   {
-    		   msg_hex[i+1]=temp;
-    	   }   
-       }	   
-    	   
-       for(int i=1;i<=16;i++)
-    	   plain[i]=msg_hex[i];
-       
-        
-        for(int i=1;i<=16;i++)
-        {
-        	if(i==1 || i==2|| i==9||i==16)
-        		shift_count[i]=1;
-        	else
-        		shift_count[i]=2;
-        	
-        }	
-        
-        System.out.println("The entered numbers are:");
-        for(int i=1;i<=16;i++)
-        {
-            System.out.print(num[i]+"\t");
-        }
-        System.out.println();
-        
-        hexbin(num,bin,16,64);
-               
-        for(int i=1;i<=64;i++)
-            key[i]=bin[i];
-        
-        System.out.println("\nThe content of initial key are:");
-        dis_array_num(bin,64);
-        
-        assign_drop_table(drop_table);
-        assign_key_comp(key_comp);
-        generate_key(key,drop_table,shift_count, key_comp, round_key);
-        	
-        
-        
-        
-        
-        
-        hexbin(plain,bin_plain,16,64);
-       
-        System.out.println("\nThe content of message are:");
-        dis_array_num(bin_plain,64);
-        
-        assign_per(per);
-        
-        for(int i=1;i<=64;i++)
-            per_index[i]=i;
-        
-       
-        
-        for(int i=1;i<=64;i++)
-            per_sort[i]=per[i];
-        
-        init_final(per_sort,per_index);
-        int cip_msg[]=new int[65];
-        int decp_msg[]=new int[65];
-        char cip_msg_txt[]=new char[17];
-        char decp_msg_txt[]=new char[17];
-        
-        
-        encrypt(bin_plain,round_key,per,ex_box,s,str_box,per_index,cip_msg);
-        System.out.println("\nThe encrypted message is:");
-        dis_array_num(cip_msg,64);
-        binhex(cip_msg,cip_msg_txt);
-        
-              
-        decrypt(cip_msg,round_key,per,ex_box,s,str_box,per_index,decp_msg);
-        System.out.println("\nThe original message is:");
-        dis_array_num(decp_msg,64);
-        
-        binhex(decp_msg,decp_msg_txt);
-        System.out.println("\nThe original message is:");
-        System.out.println(msg);
-        
-        System.out.println("The encrypted message text:");
-        dis_array_char(cip_msg_txt,16);
-        
-        System.out.println("\nThe encrypted message text:");
-        dis_array_char(decp_msg_txt,16);
+    	str_box=Arrays.copyOf(str_box1, str_box1.length);
     }
-    
-    
     
     public static void binhex(int bin[],char hex[])
     {
